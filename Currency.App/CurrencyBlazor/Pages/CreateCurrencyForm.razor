@@ -1,0 +1,50 @@
+﻿@page "/create-currency"
+@using CurrencyApp.EFCore.Models;
+@using CurrencyApp.EFCore.Requests;
+@using CurrencyApp.EFCore.Stores;
+@using CurrencyBlazor.ViewModels;
+
+@inject CurrencyStore currencyStore;
+@inject NavigationManager navigationManager;
+
+<div class="container card p-3">
+    <EditForm Model="CreateRecord" OnSubmit=PostCreateRecord class="row">
+        <DataAnnotationsValidator />
+        <div class="col-6">
+            <label for="CurrencyCode">Currency Code:</label>
+            <InputText @bind-Value=CreateRecord.CurrencyCode class="form-control" id="CurrencyCode" />
+            <ValidationMessage For="() => CreateRecord.CurrencyCode" />
+        </div>
+        <div class="col-6">
+            <label for="Rate">Rate:</label>
+            <InputNumber @bind-Value=CreateRecord.Rate class="form-control" id="Rate" />
+            <ValidationMessage For="() => CreateRecord.Rate" />
+        </div>
+
+        <div class="w-100 d-flex justify-content-center mt-5">
+            <a href="/" class="btn btn-outline-secondary px-5 me-3">Cancel</a>
+            <button type="submit" class="btn btn-success px-5">Create</button>
+        </div>
+    </EditForm>
+</div>
+
+
+
+@code {
+    CurrencyViewModel CreateRecord = new CurrencyViewModel();
+
+    async Task PostCreateRecord(EditContext context)
+    {
+        var valid = context.Validate();
+
+        if (!valid) return;
+
+        await currencyStore.CreateCurrency(new CreateCurrency
+        {
+            CurrencyCode = CreateRecord.CurrencyCode,
+            Rate = CreateRecord.Rate
+        });
+
+        navigationManager.NavigateTo("/");
+    }
+}

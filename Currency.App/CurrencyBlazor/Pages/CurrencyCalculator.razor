@@ -1,0 +1,101 @@
+﻿@page "/calculator"
+@using CurrencyApp.EFCore.Models;
+@using CurrencyApp.EFCore.Stores;
+
+@inject CurrencyStore currencyStore;
+@inject IJSRuntime JsRuntime;
+@inject NavigationManager navigationManager;
+
+<div class="container">
+
+    <h3>Currency Calculator</h3>
+
+    <div class="row">
+        <div class="col-6">
+            <label for="FromCurrency">From:</label>
+            <!-- TODO: Input Selection change should recalculate -->
+            <InputSelect @bind-Value=FromCurrency class="form-control" id="FromCurrency">
+                <option></option>
+                @foreach(var currency in AllCurrencies)
+                {
+                    <option value="@currency.Id">@currency.CurrencyCode</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="col-6">
+            <label for="ToCurrency">To:</label>
+            <!-- TODO: Input Selection change should recalculate -->
+            <InputSelect @bind-Value=ToCurrency class="form-control" id="ToCurrency">
+                <option></option>
+                @foreach (var currency in AllCurrencies)
+                {
+                    <option value="@currency.Id">@currency.CurrencyCode</option>
+                }
+            </InputSelect>
+        </div>
+    </div>
+
+    @if (FromCurrency != null && ToCurrency != null)
+    {
+        <div class="row mt-3">
+            <div class="col-6">
+                <label for="Amount">Amount</label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <InputNumber @bind-Value=Amount @oninput="Calculate" class="form-control" id="Amount" />
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (FromCurrency != null && ToCurrency != null)
+    {
+        <div class="result-card mt-3">
+            <h4>@Calculated</h4>
+        </div>
+    }
+
+</div>
+
+<style>
+    .result-card {
+        width: 100%;
+        padding: 1rem;
+        border-radius: .25rem;
+        color: white;
+        background-color: rgb(59 130 246);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .result-card h4 {
+        margin: 0;
+    }
+</style>
+
+@code {
+    decimal? Calculated = 0;
+    private decimal Amount = 0;
+    int? FromCurrency, ToCurrency = null;
+    List<Currency> AllCurrencies = new List<Currency>();
+
+    protected override async Task OnInitializedAsync() {
+        AllCurrencies = await currencyStore.GetAllCurrencies();
+    }
+
+    async Task Calculate(ChangeEventArgs e)
+    {
+        string value = "";
+        if (e.Value == null || (string)e.Value == string.Empty) value = "0";
+        else value = (string)e.Value;
+
+        Amount = decimal.Parse(value);
+
+        if (FromCurrency == null || ToCurrency == null) return;
+
+        Calculated = await currencyStore.ConvertCurrency((decimal)Amount, FromCurrency.Value, ToCurrency.Value);
+
+        StateHasChanged();
+    }
+}
